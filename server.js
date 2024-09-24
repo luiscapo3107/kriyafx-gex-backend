@@ -1,7 +1,9 @@
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const axios = require('axios');
 const { createClient } = require('redis');
 const cors = require('cors'); // Import CORS
+
 
 const app = express();
 const port = 3000;
@@ -10,7 +12,7 @@ const retrieveInterval = 5000;
 const daysToExpire = 0 ; 
 const levelsOfStrike = 20; 
 const ticker = 'QQQ';
-const token = 'Ny1XUmd1Ry0wSGtuNC1kVGN1UFNjVHVUMkNXNEFmY19PVjlzUG5kMXM3WT0';
+const token = process.env.TOKEN; 
 
 // Enable CORS for all routes (adjust as needed for security)
 app.use(cors());
