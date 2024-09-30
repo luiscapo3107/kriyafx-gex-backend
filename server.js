@@ -6,12 +6,12 @@ const cors = require('cors'); // Import CORS
 
 
 const app = express();
-const port = 3000;
+const port = 3001;
 
 const retrieveInterval = 5000; 
 const daysToExpire = 0 ; 
 const levelsOfStrike = 20; 
-const ticker = 'QQQ';
+const ticker = 'SPY';
 const token = process.env.TOKEN; 
 
 // Enable CORS for all routes (adjust as needed for security)
@@ -36,7 +36,7 @@ const fetchFinancialData = async () => {
   try {
     const response = await axios.get('https://api.marketdata.app/v1/options/chain/'+ticker+'?dte='+daysToExpire+'&strikeLimit='+levelsOfStrike+'&token='+token);
     let data = response.data;
-    console.log('Retrieved data from endpoint:', data);
+    //console.log('Retrieved data from endpoint:', data);
 
     const timestamp = data.updated[0]; // to store the time series in the Redis DB
 
@@ -73,9 +73,7 @@ const prepareData = (data) => {
     let totalGEX_OI = 0;
     let totalGEX_Volume = 0;
 
-
     const optionsLength = data.optionSymbol.length;
-
     const strikeMap = {};
 
     for (let i = 0; i < optionsLength; i++) {
@@ -92,67 +90,71 @@ const prepareData = (data) => {
       if (!strikeMap[strike]) {
         strikeMap[strike] = {
           strike: strike,
-          call: null,
-          put: null,
-          ASK_Volume: 0,
-          GEX_OI: 0,
-          GEX_Volume: 0,
+          call: { ASK_Volume: 0, GEX_OI: 0, GEX_Volume: 0 },
+          put: { ASK_Volume: 0, GEX_OI: 0, GEX_Volume: 0 },
         };
       }
 
       // Assign the option data to the appropriate side
       if (side === 'call') {
-        strikeMap[strike].call = optionData;
-
         // Update ASK_Volume
-        strikeMap[strike].ASK_Volume += optionData.volume * optionData.ask;
+        strikeMap[strike].call.ASK_Volume += optionData.volume * optionData.ask;
 
         // Update GEX_OI and GEX_Volume
-        strikeMap[strike].GEX_OI += optionData.gamma * optionData.open_interest * 100 * strike^2 * 0.01; //https://perfiliev.com/blog/how-to-calculate-gamma-exposure-and-zero-gamma-level/
-        strikeMap[strike].GEX_Volume += optionData.gamma * optionData.volume * 100 * strike^2 * 0.01; // Option's Gamma * Contract Size * Open Interest * Spot Price ^ 2 * 0.01
-        
+        strikeMap[strike].call.GEX_OI += optionData.gamma * optionData.open_interest * 100 * Math.pow(strike, 2) * 0.01;
+        strikeMap[strike].call.GEX_Volume += optionData.gamma * optionData.volume * 100 * Math.pow(strike, 2) * 0.01;
+
         // Debug
-        console.log(`Strike ${strike} - Call: GEX_OI ${strikeMap[strike].GEX_OI}`)
-      } else if (side === 'put') {
-        strikeMap[strike].put = optionData;
+        console.log(`Strike ${strike} - Call: ASK Volume ${strikeMap[strike].call.ASK_Volume}`);
 
+      } else if (side === 'put') {
         // Update ASK_Volume
-        strikeMap[strike].ASK_Volume += optionData.volume * optionData.ask * -1;
+        strikeMap[strike].put.ASK_Volume += optionData.volume * optionData.ask * -1;
 
         // Update GEX_OI and GEX_Volume
-        strikeMap[strike].GEX_OI += optionData.gamma * optionData.open_interest * (-100) * strike^2 * 0.01; //https://perfiliev.com/blog/how-to-calculate-gamma-exposure-and-zero-gamma-level/
-        strikeMap[strike].GEX_Volume += optionData.gamma * optionData.volume * (-100) * strike^2 * 0.01; // Option's Gamma * Contract Size * Open Interest * Spot Price ^ 2 * 0.01
-        
-        //Debug
-        console.log(`Strike ${strike} - Put: GEX_OI ${strikeMap[strike].GEX_OI}`)
+        strikeMap[strike].put.GEX_OI += optionData.gamma * optionData.open_interest * (-100) * Math.pow(strike, 2) * 0.01;
+        strikeMap[strike].put.GEX_Volume += optionData.gamma * optionData.volume * (-100) * Math.pow(strike, 2) * 0.01;
+
+        // Debug
+        console.log(`Strike ${strike} - Put: ASK Volume ${strikeMap[strike].put.ASK_Volume}`);
       }
-
-      // Accumulate totals
-      totalASK_Volume += strikeMap[strike].ASK_Volume;
-      totalGEX_OI += strikeMap[strike].GEX_OI;
-      totalGEX_Volume += strikeMap[strike].GEX_Volume;
-
     }
 
-    // Utility function to round numbers to 0 decimal places
-    const round = (num, decimals = 0) => {
-      return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
-    };
-
     // Convert the strikeMap to an array and sort by strike price
-    const resultArray = Object.values(strikeMap).sort((a, b) => a.strike - b.strike);
+    const strikes = Object.values(strikeMap).sort((a, b) => a.strike - b.strike);
 
-    // Round the calculated values for each strike
-    resultArray.forEach((strike) => {
-      strike.ASK_Volume = round(strike.ASK_Volume);
-      strike.GEX_OI = round(strike.GEX_OI);
-      strike.GEX_Volume = round(strike.GEX_Volume);
+    // Accumulate totals after processing all options
+    strikes.forEach(strikeData => {
+      totalASK_Volume += Math.abs(strikeData.call.ASK_Volume) + Math.abs(strikeData.put.ASK_Volume);
+      totalGEX_OI += strikeData.call.GEX_OI + strikeData.put.GEX_OI;
+      totalGEX_Volume += strikeData.call.GEX_Volume + strikeData.put.GEX_Volume;
     });
 
-    // Round the totals
-    totalASK_Volume = round(totalASK_Volume);
-    totalGEX_OI = round(totalGEX_OI);
-    totalGEX_Volume = round(totalGEX_Volume);
+    // Round the totals to integers
+    totalASK_Volume = Math.round(totalASK_Volume);
+    totalGEX_OI = Math.round(totalGEX_OI);
+    totalGEX_Volume = Math.round(totalGEX_Volume);
+
+    // Compute Percentage_ASK_Volume for each call and put, and round values
+    strikes.forEach(strikeData => {
+      // Round numeric values
+      strikeData.call.ASK_Volume = Math.round(strikeData.call.ASK_Volume);
+      strikeData.call.GEX_OI = Math.round(strikeData.call.GEX_OI);
+      strikeData.call.GEX_Volume = Math.round(strikeData.call.GEX_Volume);
+
+      strikeData.put.ASK_Volume = Math.round(strikeData.put.ASK_Volume);
+      strikeData.put.GEX_OI = Math.round(strikeData.put.GEX_OI);
+      strikeData.put.GEX_Volume = Math.round(strikeData.put.GEX_Volume);
+
+      // Compute percentages and round to integers
+      if (totalASK_Volume !== 0) {
+        strikeData.call.Percentage_ASK_Volume = Math.round((Math.abs(strikeData.call.ASK_Volume) / totalASK_Volume) * 100);
+        strikeData.put.Percentage_ASK_Volume = Math.round((Math.abs(strikeData.put.ASK_Volume) / totalASK_Volume) * 100);
+      } else {
+        strikeData.call.Percentage_ASK_Volume = 0;
+        strikeData.put.Percentage_ASK_Volume = 0;
+      }
+    });
 
     // Construct the final result object
     const result = {
@@ -160,14 +162,15 @@ const prepareData = (data) => {
       Updated: updated,
       Total_ASK_Volume: totalASK_Volume,
       Total_GEX_OI: totalGEX_OI,
-      Total_GEX_Volume: totalGEX_Volume,      
-      Data: resultArray,
+      Total_GEX_Volume: totalGEX_Volume,
+      Data: strikes,
     };
 
     return result;
   } catch (error) {
     console.error(`Error preparing Data: ${error}`);
   }
+
 };
 
 // Fetch data every X seconds
