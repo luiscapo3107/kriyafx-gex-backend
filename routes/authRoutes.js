@@ -2,11 +2,13 @@
 const express = require('express');
 const { register, login } = require('../controllers/authController');
 const { check } = require('express-validator');
+const authenticateAdmin = require('../middleware/adminMiddleware');
 
 const router = express.Router();
 
 router.post(
     '/register',
+    authenticateAdmin, // Add this middleware
     [
       check('username', 'Username is required').notEmpty(),
       check('username', 'Username must be 3+ characters').isLength({ min: 3 }),
