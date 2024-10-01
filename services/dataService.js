@@ -11,7 +11,7 @@ const isMarketOpen = async () => {
       const nowCET = DateTime.now().setZone('Europe/Berlin');
   
       // Define the start and end times in CET/CEST
-      const marketOpenTime = nowCET.set({ hour: 14, minute: 30, second: 0, millisecond: 0 });
+      const marketOpenTime = nowCET.set({ hour: 15, minute: 25, second: 0, millisecond: 0 });
       const marketCloseTime = nowCET.set({ hour: 22, minute: 30, second: 0, millisecond: 0 });
   
       // Check if current time is between marketOpenTime and marketCloseTime
