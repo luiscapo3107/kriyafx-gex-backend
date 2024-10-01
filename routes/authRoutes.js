@@ -1,6 +1,6 @@
 // routes/authRoutes.js
 const express = require('express');
-const { register, login } = require('../controllers/authController');
+const { register, login, deleteUser } = require('../controllers/authController');
 const { check } = require('express-validator');
 const authenticateAdmin = require('../middleware/adminMiddleware');
 
@@ -25,5 +25,8 @@ router.post(
       check('password', 'Password is required').notEmpty(),
     ],
     login
-  );
+);
+
+router.delete('/users/:username', authenticateAdmin, deleteUser);
+
 module.exports = router;
