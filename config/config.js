@@ -10,4 +10,5 @@ module.exports = {
   levelsOfStrike: process.env.LEVELS_OF_STRIKE || 20,
   ticker: process.env.TICKER || 'SPY',
   redisMaxEntries: process.env.REDIS_MAX_ENTRIES || 100000,
+  mongodbURI: process.env.MONGODB_URI
 };
