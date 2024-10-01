@@ -35,6 +35,30 @@ const isMarketOpen = async () => {
     }
   };
 
+const fetchSPYLastPrice = async () => {
+  try {
+    const response = await axios.get(`https://api.marketdata.app/v1/stocks/quotes/SPY`);
+    const data = response.data;
+
+    if (data.s !== 'ok') {
+      throw new Error('Failed to fetch SPY last price');
+    }
+
+    // Extract only the 'last' price and 'updated' timestamp
+    const spyLastPrice = {
+      Symbol: 'SPY',
+      Updated: DateTime.fromSeconds(data.updated[0]).toISO(),
+      Last: data.last[0],
+      updatedUnix: data.updated[0], // For timestamp comparison
+    };
+
+    return spyLastPrice;
+  } catch (error) {
+    console.error(`Error fetching SPY last price: ${error}`);
+    throw error; // Re-throw to handle in fetchFinancialData
+  }
+};
+
 const fetchFinancialData = () => {
   setInterval(async () => {
     try {
@@ -54,10 +78,20 @@ const fetchFinancialData = () => {
         data = prepareData(data);
         console.log('Prepared data from endpoint:', data);
 
+        // Fetch SPY Last Price
+        const spyLastPrice = await fetchSPYLastPrice();
+        console.log('Fetched SPY last price:', spyLastPrice);
+
+        //Combine Options Data and SPY Last Price 
+        const combinedData = {
+          Options: data, // Existing Options data
+          Price: spyLastPrice.Last // Last Price of SPY
+        }
+
         // Store data in Redis sorted set with timestamp as the score
         await redisClient.zAdd('options_chain_data_zset', {
             score: timestamp,
-            value: JSON.stringify(data),
+            value: JSON.stringify(combinedData),
         });
 
         // Limit the size of the sorted set
