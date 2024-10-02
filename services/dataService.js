@@ -1,3 +1,10 @@
+//TODO - test refactoring 
+
+const fetchFinancialData = require('./utils/financialData');
+
+module.exports = fetchFinancialData;
+
+/*
 // services/dataService.js
 const axios = require('axios');
 const { redisClient } = require('./redisClient');
@@ -109,3 +116,4 @@ const fetchFinancialData = () => {
 };
 
 module.exports = fetchFinancialData;
+*/

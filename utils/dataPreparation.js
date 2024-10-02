@@ -1,4 +1,6 @@
 // utils/dataPreparation.js
+//TODO: Add Expected Move as a basis of the implied volatility to add the 1 Day expected move range: check out formula in https://www.home.saxo/content/articles/equities/understanding-and-calculating-the-expected-move-of-a-stock-etf-index-07072023
+// Expected Move = Price * IV % * DTE^2 /365 or Using the price of a straddle when at 0DTE > Expected Move = cost of ATM Call + cost of ATM Put - Call por arriba, Put por abajo. Tengo que mirar en 0DTE el precio en ATM strike actual)
 const prepareData = (data) => {
     try {
       const symbol = data.underlying[0];
