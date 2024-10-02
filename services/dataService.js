@@ -1,6 +1,6 @@
 //TODO - test refactoring 
 
-const fetchFinancialData = require('./utils/financialData');
+const fetchFinancialData = require('../utils/fetchFinancialData');
 
 module.exports = fetchFinancialData;
 

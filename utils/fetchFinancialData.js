@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { redisClient } = require('./redisClient');
+const { redisClient } = require('../services/redisClient');
 const prepareData = require('./dataPreparation');
 const config = require('../config/config');
 const fetchSPYLastPrice = require('./fetchSPY');
