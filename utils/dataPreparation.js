@@ -64,19 +64,9 @@ const prepareData = (data) => {
         strikeData.put.GEX_OI = Math.round(strikeData.put.GEX_OI);
         strikeData.put.GEX_Volume = Math.round(strikeData.put.GEX_Volume);
 
-        strikeData.Net_ASK_Volume = strikeData.call.ASK_Volume - strikeData.put.ASK_Volume; 
-  
-        if (totalASK_Volume !== 0) {
-          strikeData.call.Percentage_ASK_Volume = Math.round(
-            (Math.abs(strikeData.call.ASK_Volume) / Math.abs(totalASK_Volume)) * 100
-          );
-          strikeData.put.Percentage_ASK_Volume = Math.round(
-            (Math.abs(strikeData.put.ASK_Volume) / Math.abs(totalASK_Volume)) * 100
-          );
-        } else {
-          strikeData.call.Percentage_ASK_Volume = 0;
-          strikeData.put.Percentage_ASK_Volume = 0;
-        }
+        strikeData.Net_ASK_Volume = strikeData.call.ASK_Volume + strikeData.put.ASK_Volume; 
+        strikeData.Net_GEX_OI = strikeData.call.GEX_OI + strikeData.put.GEX_OI;
+        strikeData.Net_GEX_Volume = strikeData.call.GEX_Volume + strikeData.put.GEX_Volume;
       });
   
       return {

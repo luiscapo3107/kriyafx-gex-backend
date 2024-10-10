@@ -1,12 +1,19 @@
 const axios = require('axios');
 const config = require('../config/config');
 const { DateTime } = require('luxon');
+require('dotenv').config();
 
 const isMarketOpen = async () => {
     try {
         const nowCET = DateTime.now().setZone('Europe/Berlin');
-        const marketOpenTime = nowCET.set({ hour: 7, minute: 25 });
-        const marketCloseTime = nowCET.set({ hour: 22, minute: 30 });
+        const marketOpenTime = nowCET.set({ 
+            hour: parseInt(process.env.MARKET_OPEN_HOUR), 
+            minute: parseInt(process.env.MARKET_OPEN_MINUTE) 
+        });
+        const marketCloseTime = nowCET.set({ 
+            hour: parseInt(process.env.MARKET_CLOSE_HOUR), 
+            minute: parseInt(process.env.MARKET_CLOSE_MINUTE) 
+        });
 
         const isWithinMarketHours = nowCET >= marketOpenTime && nowCET <= marketCloseTime;
 

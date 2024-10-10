@@ -3,6 +3,19 @@ const { redisClient } = require('../services/redisClient');
 
 const getOptionsChain = async (req, res) => {
   try {
+    if (req.query.latest !== undefined) {
+      // Fetch the latest entry > GET /api/options-chain?latest
+      const latestData = await redisClient.zRange('options_chain_data_zset', -1, -1);
+      
+      if (latestData.length === 0) {
+        return res.status(404).json({ message: 'No data available' });
+      }
+      
+      const data = JSON.parse(latestData[0]);
+      return res.json(data);
+    }
+
+    // Existing logic for fetching data within a time range > GET /api/options-chain?min=1234567890&max=9876543210
     const minTimestamp = req.query.min ? parseInt(req.query.min) : '-inf';
     const maxTimestamp = req.query.max ? parseInt(req.query.max) : '+inf';
 
