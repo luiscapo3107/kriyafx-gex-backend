@@ -5,7 +5,7 @@ const { DateTime } = require('luxon');
 const isMarketOpen = async () => {
     try {
         const nowCET = DateTime.now().setZone('Europe/Berlin');
-        const marketOpenTime = nowCET.set({ hour: 15, minute: 25 });
+        const marketOpenTime = nowCET.set({ hour: 7, minute: 25 });
         const marketCloseTime = nowCET.set({ hour: 22, minute: 30 });
 
         const isWithinMarketHours = nowCET >= marketOpenTime && nowCET <= marketCloseTime;

@@ -1,6 +1,7 @@
 // utils/dataPreparation.js
 //TODO: Add Expected Move as a basis of the implied volatility to add the 1 Day expected move range: check out formula in https://www.home.saxo/content/articles/equities/understanding-and-calculating-the-expected-move-of-a-stock-etf-index-07072023
 // Expected Move = Price * IV % * DTE^2 /365 or Using the price of a straddle when at 0DTE > Expected Move = cost of ATM Call + cost of ATM Put - Call por arriba, Put por abajo. Tengo que mirar en 0DTE el precio en ATM strike actual)
+//Look up the option chain and add the price of the at-the-money call option and that of the at-the-money put option. Then multiply that value by 85% to get the expected moves
 const prepareData = (data) => {
     try {
       const symbol = data.underlying[0];
@@ -45,7 +46,7 @@ const prepareData = (data) => {
       const strikes = Object.values(strikeMap).sort((a, b) => a.strike - b.strike);
   
       strikes.forEach((strikeData) => {
-        totalASK_Volume += Math.abs(strikeData.call.ASK_Volume) + Math.abs(strikeData.put.ASK_Volume);
+        totalASK_Volume += strikeData.call.ASK_Volume + strikeData.put.ASK_Volume;
         totalGEX_OI += strikeData.call.GEX_OI + strikeData.put.GEX_OI;
         totalGEX_Volume += strikeData.call.GEX_Volume + strikeData.put.GEX_Volume;
       });
@@ -62,13 +63,15 @@ const prepareData = (data) => {
         strikeData.put.ASK_Volume = Math.round(strikeData.put.ASK_Volume);
         strikeData.put.GEX_OI = Math.round(strikeData.put.GEX_OI);
         strikeData.put.GEX_Volume = Math.round(strikeData.put.GEX_Volume);
+
+        strikeData.Net_ASK_Volume = strikeData.call.ASK_Volume - strikeData.put.ASK_Volume; 
   
         if (totalASK_Volume !== 0) {
           strikeData.call.Percentage_ASK_Volume = Math.round(
-            (Math.abs(strikeData.call.ASK_Volume) / totalASK_Volume) * 100
+            (Math.abs(strikeData.call.ASK_Volume) / Math.abs(totalASK_Volume)) * 100
           );
           strikeData.put.Percentage_ASK_Volume = Math.round(
-            (Math.abs(strikeData.put.ASK_Volume) / totalASK_Volume) * 100
+            (Math.abs(strikeData.put.ASK_Volume) / Math.abs(totalASK_Volume)) * 100
           );
         } else {
           strikeData.call.Percentage_ASK_Volume = 0;

@@ -1,9 +1,10 @@
 const axios = require('axios');
 const { DateTime } = require('luxon');
+const config = require('../config/config');
 
 const fetchSPYLastPrice = async () => {
     try {
-        const response = await axios.get(`https://api.marketdata.app/v1/stocks/quotes/SPY`);
+        const response = await axios.get(`https://api.marketdata.app/v1/stocks/quotes/${config.ticker}?token=${config.token}`);
         const data = response.data;
 
         if (data.s !== 'ok') {
