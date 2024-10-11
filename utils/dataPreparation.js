@@ -16,7 +16,6 @@ const prepareData = async (data) => {
 		const optionsLength = data.optionSymbol ? data.optionSymbol.length : 0;
 
 		const strikeMap = {};
-		const strikes = [];
 
 		for (let i = 0; i < optionsLength; i++) {
 			const strike = data.strike[i];
@@ -40,20 +39,36 @@ const prepareData = async (data) => {
 				strikeMap[strike].call.ASK_Volume += optionData.volume * optionData.ask;
 				strikeMap[strike].call.GEX_OI += optionData.gamma * optionData.open_interest * 100 * Math.pow(strike, 2) * 0.01;
 				strikeMap[strike].call.GEX_Volume += optionData.gamma * optionData.volume * 100 * Math.pow(strike, 2) * 0.01;
-				totalASK_Volume += strikeMap[strike].call.ASK_Volume;
-				totalGEX_OI += strikeMap[strike].call.GEX_OI;
-				totalGEX_Volume += strikeMap[strike].call.GEX_Volume;
 			} else if (side === 'put') {
 				strikeMap[strike].put.ASK_Volume += optionData.volume * optionData.ask * -1;
 				strikeMap[strike].put.GEX_OI += optionData.gamma * optionData.open_interest * -100 * Math.pow(strike, 2) * 0.01;
 				strikeMap[strike].put.GEX_Volume += optionData.gamma * optionData.volume * -100 * Math.pow(strike, 2) * 0.01;
-				totalASK_Volume += strikeMap[strike].put.ASK_Volume;
-				totalGEX_OI += strikeMap[strike].put.GEX_OI;
-				totalGEX_Volume += strikeMap[strike].put.GEX_Volume;
 			}
-
-			strikes.push(strikeMap[strike]);
 		}
+
+		const strikes = Object.values(strikeMap).sort((a, b) => a.strike - b.strike);
+
+		strikes.forEach((strikeData) => {
+			totalASK_Volume += strikeData.call.ASK_Volume + strikeData.put.ASK_Volume;
+			totalGEX_OI += strikeData.call.GEX_OI + strikeData.put.GEX_OI;
+			totalGEX_Volume += strikeData.call.GEX_Volume + strikeData.put.GEX_Volume;
+
+			strikeData.call.ASK_Volume = Math.round(strikeData.call.ASK_Volume);
+			strikeData.call.GEX_OI = Math.round(strikeData.call.GEX_OI);
+			strikeData.call.GEX_Volume = Math.round(strikeData.call.GEX_Volume);
+	  
+			strikeData.put.ASK_Volume = Math.round(strikeData.put.ASK_Volume);
+			strikeData.put.GEX_OI = Math.round(strikeData.put.GEX_OI);
+			strikeData.put.GEX_Volume = Math.round(strikeData.put.GEX_Volume);
+	
+			strikeData.Net_ASK_Volume = strikeData.call.ASK_Volume + strikeData.put.ASK_Volume; 
+			strikeData.Net_GEX_OI = strikeData.call.GEX_OI + strikeData.put.GEX_OI;
+			strikeData.Net_GEX_Volume = strikeData.call.GEX_Volume + strikeData.put.GEX_Volume;
+		});
+
+		totalASK_Volume = Math.round(totalASK_Volume);
+		totalGEX_OI = Math.round(totalGEX_OI);
+		totalGEX_Volume = Math.round(totalGEX_Volume);
 
 		let expectedMove;
 		try {
