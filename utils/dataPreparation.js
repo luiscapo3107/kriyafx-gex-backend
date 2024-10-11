@@ -19,7 +19,11 @@ const prepareData = async (data) => {
 
 		for (let i = 0; i < optionsLength; i++) {
 			const strike = data.strike[i];
-			const side = data.side[i];
+			
+			// Skip strikes with decimal values
+			if (strike % 1 !== 0) continue;
+			
+			 const side = data.side[i];
 			const optionData = {
 				open_interest: data.openInterest[i],
 				gamma: data.gamma[i],
