@@ -5,6 +5,13 @@ const { DateTime } = require('luxon');
 const isMarketOpen = async () => {
     try {
         const nowCET = DateTime.now().setZone('Europe/Berlin');
+
+        // Check if it's a weekend (Saturday or Sunday)
+        if (nowCET.weekday > 5) {
+            console.log('It\'s a weekend. Market is closed.');
+            return false;
+        }
+
         const marketOpenTime = nowCET.set({ 
             hour: config.marketOpenHour, 
             minute: config.marketOpenMinute 
